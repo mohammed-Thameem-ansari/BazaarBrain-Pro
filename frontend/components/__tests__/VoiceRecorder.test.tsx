@@ -62,8 +62,9 @@ describe('VoiceRecorder', () => {
       <VoiceRecorder onTranscript={mockOnTranscript} onError={mockOnError} />
     );
 
-    expect(screen.getByText(/Voice Recorder/i)).toBeInTheDocument();
-    expect(screen.getByText(/Start Recording/i)).toBeInTheDocument();
+  expect(screen.getByText(/Voice Recorder/i)).toBeInTheDocument();
+  // Select the actionable button by role+name to avoid collisions with instructional text
+  expect(screen.getByRole('button', { name: /Start Recording/i })).toBeInTheDocument();
   });
 
   it('shows start recording button initially', () => {
@@ -74,8 +75,9 @@ describe('VoiceRecorder', () => {
       <VoiceRecorder onTranscript={mockOnTranscript} onError={mockOnError} />
     );
 
-    expect(screen.getByText(/Start Recording/i)).toBeInTheDocument();
-    expect(screen.queryByText(/Stop Recording/i)).not.toBeInTheDocument();
+  expect(screen.getByRole('button', { name: /Start Recording/i })).toBeInTheDocument();
+  // Ensure the Stop Recording button is not present yet
+  expect(screen.queryByRole('button', { name: /Stop Recording/i })).not.toBeInTheDocument();
   });
 
   it('shows instructions', () => {

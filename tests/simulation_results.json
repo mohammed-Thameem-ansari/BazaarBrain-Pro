@@ -1,0 +1,125 @@
+[
+  {
+    "query": "What if I increase rice price by 5%?",
+    "timestamp": "1756648841.8027954",
+    "gpt_parsing": null,
+    "gemini_parsing": {
+      "scenario": "increase_price",
+      "item": "rice",
+      "change": "+5",
+      "current_value": null,
+      "units": "%",
+      "assumptions": "Based on current market conditions",
+      "simulation_type": "Price increase simulation for rice product"
+    },
+    "final_result": {
+      "query": "What if I increase rice price by 5%?",
+      "parsed_parameters": {
+        "scenario": "increase_price",
+        "item": "rice",
+        "change": "+5",
+        "current_value": null,
+        "units": "%",
+        "assumptions": "Based on current market conditions",
+        "simulation_type": "Price increase simulation for rice product",
+        "parsing_source": "gemini_only"
+      },
+      "simulation_results": {
+        "scenario": "increase_price",
+        "item": "rice",
+        "change": "+5.0%",
+        "current_price": 50.0,
+        "new_price": 52.5,
+        "current_weekly_profit": 1500.0,
+        "new_weekly_profit": 1575.0,
+        "profit_change": 75.0,
+        "sales_impact": "90.0%",
+        "assumptions": "Sales decrease by 10.0% with price increase",
+        "recommendation": "Consider gradual price increases to minimize sales impact"
+      },
+      "timestamp": "1756648841.8027954"
+    }
+  },
+  {
+    "query": "What if I increase rice price by 5%?",
+    "timestamp": "1756648841.8027954",
+    "gpt_parsing": null,
+    "gemini_parsing": {
+      "scenario": "increase_price",
+      "item": "rice",
+      "change": "+5",
+      "current_value": null,
+      "units": "%",
+      "assumptions": "Based on current market conditions",
+      "simulation_type": "Price increase simulation for rice product"
+    },
+    "final_result": {
+      "query": "What if I increase rice price by 5%?",
+      "parsed_parameters": {
+        "scenario": "increase_price",
+        "item": "rice",
+        "change": "+5",
+        "current_value": null,
+        "units": "%",
+        "assumptions": "Based on current market conditions",
+        "simulation_type": "Price increase simulation for rice product",
+        "parsing_source": "gemini_only"
+      },
+      "simulation_results": {
+        "scenario": "increase_price",
+        "item": "rice",
+        "change": "+5.0%",
+        "current_price": 50.0,
+        "new_price": 52.5,
+        "current_weekly_profit": 1500.0,
+        "new_weekly_profit": 1575.0,
+        "profit_change": 75.0,
+        "sales_impact": "90.0%",
+        "assumptions": "Sales decrease by 10.0% with price increase",
+        "recommendation": "Consider gradual price increases to minimize sales impact"
+      },
+      "timestamp": "1756648841.8027954"
+    }
+  },
+  {
+    "query": "What if I increase rice price by 5%?",
+    "timestamp": "1756649109.4513552",
+    "gpt_parsing": null,
+    "gemini_parsing": {
+      "scenario": "increase_price",
+      "item": "rice",
+      "change": "+5",
+      "current_value": null,
+      "units": "%",
+      "assumptions": "Based on current market conditions",
+      "simulation_type": "Price increase simulation for rice product"
+    },
+    "final_result": {
+      "query": "What if I increase rice price by 5%?",
+      "parsed_parameters": {
+        "scenario": "increase_price",
+        "item": "rice",
+        "change": "+5",
+        "current_value": null,
+        "units": "%",
+        "assumptions": "Based on current market conditions",
+        "simulation_type": "Price increase simulation for rice product",
+        "parsing_source": "gemini_only"
+      },
+      "simulation_results": {
+        "scenario": "increase_price",
+        "item": "rice",
+        "change": "+5.0%",
+        "current_price": 50.0,
+        "new_price": 52.5,
+        "current_weekly_profit": 1500.0,
+        "new_weekly_profit": 1575.0,
+        "profit_change": 75.0,
+        "sales_impact": "90.0%",
+        "assumptions": "Sales decrease by 10.0% with price increase",
+        "recommendation": "Consider gradual price increases to minimize sales impact"
+      },
+      "timestamp": "1756649109.4513552"
+    }
+  }
+]

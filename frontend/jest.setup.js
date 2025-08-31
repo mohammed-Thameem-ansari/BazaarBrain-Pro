@@ -20,14 +20,19 @@ jest.mock('next/navigation', () => ({
   },
 }))
 
-// Mock localStorage
-const localStorageMock = {
-  getItem: jest.fn(),
-  setItem: jest.fn(),
-  removeItem: jest.fn(),
-  clear: jest.fn(),
-}
-global.localStorage = localStorageMock
+// Mock localStorage with stable function identities
+const localStorageMock = (() => {
+  const store = new Map()
+  return {
+    getItem: jest.fn((key) => (store.has(key) ? store.get(key) : null)),
+    setItem: jest.fn((key, value) => { store.set(key, value) }),
+    removeItem: jest.fn((key) => { store.delete(key) }),
+    clear: jest.fn(() => { store.clear() }),
+  }
+})()
+Object.defineProperty(window, 'localStorage', { value: localStorageMock, configurable: true, writable: true })
+// @ts-ignore
+global.localStorage = window.localStorage
 
 // Mock window.matchMedia
 Object.defineProperty(window, 'matchMedia', {

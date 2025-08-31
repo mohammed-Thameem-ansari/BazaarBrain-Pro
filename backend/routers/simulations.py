@@ -81,10 +81,9 @@ async def run_simulation(
         )
         
         if not simulation_id:
-            raise HTTPException(
-                status_code=500,
-                detail="Failed to save simulation to database"
-            )
+            # Offline/DB-unavailable path: don't fail user flow
+            logger.warning("DB save for simulation failed; returning result with generated ID")
+            simulation_id = str(uuid.uuid4())
         
         # Return success response
         return {

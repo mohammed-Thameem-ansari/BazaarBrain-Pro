@@ -50,7 +50,8 @@ def register(creds: Credentials):
     """Dev-only register that issues a JWT for the provided email."""
     try:
         token = _issue_token(creds.email)
-        return {"success": True, "token": token, "user": {"id": jwt.decode(token, JWT_SECRET, algorithms=["HS256"])['sub'], "email": creds.email}}
+        payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"], options={"verify_aud": False})
+        return {"success": True, "token": token, "user": {"id": payload['sub'], "email": creds.email}}
     except Exception as e:
         logger.error(f"Registration failed: {e}")
         raise HTTPException(status_code=500, detail="Registration failed")
@@ -61,7 +62,8 @@ def login(creds: Credentials):
     """Dev login: accepts any email/password and returns a JWT."""
     try:
         token = _issue_token(creds.email)
-        return {"success": True, "token": token, "user": {"id": jwt.decode(token, JWT_SECRET, algorithms=["HS256"])['sub'], "email": creds.email}}
+        payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"], options={"verify_aud": False})
+        return {"success": True, "token": token, "user": {"id": payload['sub'], "email": creds.email}}
     except Exception as e:
         logger.error(f"Login failed: {e}")
         raise HTTPException(status_code=500, detail="Login failed")

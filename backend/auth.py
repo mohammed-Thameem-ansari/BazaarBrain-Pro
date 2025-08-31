@@ -23,7 +23,7 @@ security = HTTPBearer()
 
 # Supabase JWT secret (you'll need to get this from your Supabase dashboard)
 # For now, we'll use a placeholder - in production, get this from environment
-SUPABASE_JWT_SECRET = config.SUPABASE_SERVICE_ROLE_KEY or "your-jwt-secret-here"
+SUPABASE_JWT_SECRET = config.SUPABASE_SERVICE_ROLE_KEY or "dev-secret-key"
 
 def verify_jwt_token(token: str) -> Optional[Dict[str, Any]]:
     """

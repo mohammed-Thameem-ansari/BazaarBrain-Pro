@@ -75,15 +75,13 @@ describe('LanguageContext', () => {
   });
 
   it('falls back to English for unknown translation keys', () => {
-    renderWithLanguageProvider(<TestComponent />);
-    
     const TestComponentWithUnknownKey = () => {
       const { t } = useLanguage();
       return <div data-testid="unknown-key">{t('unknown.key')}</div>;
     };
-    
-    render(<TestComponentWithUnknownKey />);
-    
+
+    renderWithLanguageProvider(<TestComponentWithUnknownKey />);
+
     expect(screen.getByTestId('unknown-key')).toHaveTextContent('unknown.key');
   });
 });
