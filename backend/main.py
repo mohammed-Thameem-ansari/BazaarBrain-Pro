@@ -10,6 +10,7 @@ This module sets up the FastAPI server with:
 """
 
 from fastapi import FastAPI, Request, HTTPException
+from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import uvicorn
@@ -33,13 +34,25 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Lifespan handler replacing deprecated on_event startup/shutdown
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    logger.info("🚀 BazaarBrain-Pro API starting up...")
+    if db_health_check():
+        logger.info("✅ Database connection established")
+    else:
+        logger.warning("⚠️  Database connection failed - some features may not work")
+    yield
+    logger.info("🛑 BazaarBrain-Pro API shutting down...")
+
 # Create FastAPI app
 app = FastAPI(
     title="BazaarBrain-Pro API",
     description="AI-powered business assistant for shopkeepers using GPT + Gemini",
     version="1.0.0",
     docs_url="/docs" if config.DEBUG else None,
-    redoc_url="/redoc" if config.DEBUG else None
+    redoc_url="/redoc" if config.DEBUG else None,
+    lifespan=lifespan,
 )
 
 # Add CORS middleware
@@ -153,23 +166,7 @@ async def health_check():
             "version": "1.0.0"
         }
 
-# Startup event
-@app.on_event("startup")
-async def startup_event():
-    """Run on application startup."""
-    logger.info("🚀 BazaarBrain-Pro API starting up...")
-    
-    # Test database connection
-    if db_health_check():
-        logger.info("✅ Database connection established")
-    else:
-        logger.warning("⚠️  Database connection failed - some features may not work")
-
-# Shutdown event
-@app.on_event("shutdown")
-async def shutdown_event():
-    """Run on application shutdown."""
-    logger.info("🛑 BazaarBrain-Pro API shutting down...")
+# Removed deprecated on_event startup/shutdown in favor of lifespan
 
 if __name__ == "__main__":
     # Run the application
