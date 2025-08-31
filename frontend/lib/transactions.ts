@@ -91,34 +91,94 @@ export const transactionsAPI = {
     }
   },
 
-  // Export transactions to CSV
+  // Export transactions to CSV with enhanced data processing
   exportTransactionsCSV: async (filters: TransactionFilters = {}) => {
     try {
-      const params = new URLSearchParams();
+      // First get the transactions data
+      const transactionsResponse = await transactionsAPI.getTransactions(filters);
       
-      if (filters.start_date) params.append('start_date', filters.start_date);
-      if (filters.end_date) params.append('end_date', filters.end_date);
-      if (filters.source) params.append('source', filters.source);
+      if (!transactionsResponse.success || !transactionsResponse.transactions.length) {
+        throw new Error('No transactions to export');
+      }
 
-      const response = await API.get(`/api/v1/transactions/export?${params.toString()}`, {
-        responseType: 'blob',
+      // Import Papa Parse dynamically to avoid SSR issues
+      const Papa = (await import('papaparse')).default;
+
+      // Enhanced CSV data with business insights
+      const csvData = transactionsResponse.transactions.map((transaction: Transaction) => {
+        const items = transaction.parsed_json?.items || [];
+        const totalItems = items.reduce((sum: number, item: any) => sum + (item.quantity || 1), 0);
+        const avgItemPrice = items.length > 0 ? (transaction.parsed_json?.total || 0) / totalItems : 0;
+        
+        return {
+          Date: new Date(transaction.created_at).toLocaleDateString(),
+          Time: new Date(transaction.created_at).toLocaleTimeString(),
+          Source: transaction.source,
+          Store: transaction.parsed_json?.store_name || 'Unknown',
+          TotalItems: totalItems,
+          TotalAmount: transaction.parsed_json?.total ? `$${transaction.parsed_json.total.toFixed(2)}` : '$0.00',
+          AverageItemPrice: `$${avgItemPrice.toFixed(2)}`,
+          Items: items.map((item: any) => `${item.name} (${item.quantity || 1})`).join('; '),
+          PaymentMethod: transaction.parsed_json?.payment_method || 'Unknown',
+          TaxAmount: transaction.parsed_json?.tax ? `$${transaction.parsed_json.tax.toFixed(2)}` : '$0.00',
+          Discount: transaction.parsed_json?.discount ? `$${transaction.parsed_json.discount.toFixed(2)}` : '$0.00',
+          RawInput: transaction.raw_input,
+          CreatedAt: transaction.created_at,
+          UpdatedAt: transaction.updated_at
+        };
       });
 
-      // Create download link
-      const url = window.URL.createObjectURL(new Blob([response.data]));
+      // Add summary row
+      const summary = {
+        Date: 'SUMMARY',
+        Time: '',
+        Source: '',
+        Store: '',
+        TotalItems: csvData.reduce((sum, row) => sum + (parseInt(row.TotalItems) || 0), 0),
+        TotalAmount: `$${csvData.reduce((sum, row) => sum + parseFloat(row.TotalAmount.replace('$', '') || 0), 0).toFixed(2)}`,
+        AverageItemPrice: '',
+        Items: '',
+        PaymentMethod: '',
+        TaxAmount: '',
+        Discount: '',
+        RawInput: '',
+        CreatedAt: '',
+        UpdatedAt: ''
+      };
+
+      const finalData = [...csvData, summary];
+      const csv = Papa.unparse(finalData, {
+        header: true,
+        delimiter: ',',
+        quotes: true,
+        quoteStrings: true,
+        skipEmptyLines: true
+      });
+
+      // Create and download the CSV file
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `transactions-${new Date().toISOString().split('T')[0]}.csv`);
+      const url = window.URL.createObjectURL(blob);
+      
+      link.setAttribute('href', url);
+      link.setAttribute('download', `bazaarbrain_transactions_${new Date().toISOString().split('T')[0]}_${new Date().getTime()}.csv`);
+      link.style.visibility = 'hidden';
+      
       document.body.appendChild(link);
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
 
-      return { success: true };
+      return { 
+        success: true, 
+        message: 'CSV exported successfully', 
+        count: csvData.length,
+        filename: `bazaarbrain_transactions_${new Date().toISOString().split('T')[0]}_${new Date().getTime()}.csv`
+      };
     } catch (error: any) {
       return {
         success: false,
-        error: error.response?.data?.detail || 'Export failed',
+        error: error.message || 'Export failed',
       };
     }
   },

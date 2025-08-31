@@ -268,12 +268,14 @@ class RealityCaptureAgent:
         
         return merged
     
-    def process_receipt(self, image_path: str) -> Dict:
+    def process_receipt(self, image_path: str, user_id: Optional[str] = None, save_to_db: bool = True) -> Dict:
         """
         Main function to process a receipt/bill image.
         
         Args:
             image_path: Path to the image file
+            user_id: Optional user ID for database storage
+            save_to_db: Whether to save results to database
             
         Returns:
             Structured data extracted from the image
@@ -301,8 +303,27 @@ class RealityCaptureAgent:
             "gemini_success": gemini_result is not None
         })
         
-        # Store results
+        # Store results locally
         self._store_results(image_path, gpt_result, gemini_result, final_result)
+        
+        # Save to database if requested and user_id provided
+        if save_to_db and user_id:
+            try:
+                from backend.db import save_transaction
+                transaction_id = save_transaction(
+                    user_id=user_id,
+                    raw_input=image_path,
+                    parsed_json=final_result,
+                    source="image"
+                )
+                if transaction_id:
+                    final_result["transaction_id"] = transaction_id
+                    logger.info(f"Transaction saved to database with ID: {transaction_id}")
+                else:
+                    logger.warning("Failed to save transaction to database")
+            except Exception as e:
+                logger.error(f"Database save failed: {e}")
+                final_result["db_save_error"] = str(e)
         
         logger.info(f"Processing complete. Source: {final_result.get('source', 'unknown')}")
         return final_result

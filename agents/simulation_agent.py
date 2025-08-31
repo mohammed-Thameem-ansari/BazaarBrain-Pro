@@ -434,13 +434,15 @@ class SimulationAgent:
             "recommendation": "Please rephrase your query using supported scenario types"
         }
     
-    def simulate(self, query: str, current_data: Optional[Dict] = None) -> Dict:
+    def simulate(self, query: str, current_data: Optional[Dict] = None, user_id: Optional[str] = None, save_to_db: bool = True) -> Dict:
         """
         Main simulation function.
         
         Args:
             query: Natural language business query
             current_data: Optional current business data (overrides sample data)
+            user_id: Optional user ID for database storage
+            save_to_db: Whether to save results to database
             
         Returns:
             Complete simulation results
@@ -473,8 +475,35 @@ class SimulationAgent:
             "timestamp": str(Path(".").stat().st_mtime)
         }
         
-        # Store results
+        # Store results locally
         self._store_results(query, gpt_parsed, gemini_parsed, final_result)
+        
+        # Save to database if requested and user_id provided
+        if save_to_db and user_id:
+            try:
+                from backend.db import save_simulation
+                # Extract parameters for storage
+                parameters = {
+                    "scenario": final_parsed.get("scenario"),
+                    "item": final_parsed.get("item"),
+                    "change": final_parsed.get("change"),
+                    "current_data": current_data or {}
+                }
+                
+                simulation_id = save_simulation(
+                    user_id=user_id,
+                    query=query,
+                    parameters=parameters,
+                    result=final_result
+                )
+                if simulation_id:
+                    final_result["simulation_id"] = simulation_id
+                    logger.info(f"Simulation saved to database with ID: {simulation_id}")
+                else:
+                    logger.warning("Failed to save simulation to database")
+            except Exception as e:
+                logger.error(f"Database save failed: {e}")
+                final_result["db_save_error"] = str(e)
         
         logger.info("Simulation complete")
         return final_result

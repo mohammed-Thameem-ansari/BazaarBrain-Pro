@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import { simulationsAPI, SimulationResult } from '../lib/simulations';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface SimulationDashboardProps {
   initialQuery?: string;
@@ -67,13 +69,23 @@ export default function SimulationDashboard({ initialQuery = '', onSimulationCom
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-6 space-y-8">
-      <div className="text-center">
+    <motion.div 
+      className="max-w-6xl mx-auto p-6 space-y-8"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6 }}
+    >
+      <motion.div 
+        className="text-center"
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8, delay: 0.2 }}
+      >
         <h2 className="text-3xl font-bold text-gray-900 mb-4">Business Simulation</h2>
         <p className="text-lg text-gray-600">
           Ask "what if" questions to analyze business scenarios and get AI-powered insights
         </p>
-      </div>
+      </motion.div>
 
       {/* Natural Language Input */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
@@ -325,22 +337,94 @@ export default function SimulationDashboard({ initialQuery = '', onSimulationCom
             </div>
           )}
 
-          {/* Assumptions */}
-          {result.assumptions.length > 0 && (
-            <div className="mt-6 bg-white rounded-lg border border-green-200 p-4">
-              <h4 className="text-lg font-semibold text-gray-900 mb-3">Key Assumptions</h4>
-              <ul className="space-y-2">
-                {result.assumptions.map((assumption, index) => (
-                  <li key={index} className="flex items-start">
-                    <span className="text-blue-500 mr-2">•</span>
-                    <span className="text-gray-700">{assumption}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
+                         {/* Assumptions */}
+               {result.assumptions.length > 0 && (
+                 <div className="mt-6 bg-white rounded-lg border border-green-200 p-4">
+                   <h4 className="text-lg font-semibold text-gray-900 mb-3">Key Assumptions</h4>
+                   <ul className="space-y-2">
+                     {result.assumptions.map((assumption, index) => (
+                       <li key={index} className="flex items-start">
+                         <span className="text-blue-500 mr-2">•</span>
+                         <span className="text-gray-700">{assumption}</span>
+                       </li>
+                     ))}
+                   </ul>
+                 </div>
+               )}
+
+               {/* Charts and Analytics */}
+               <div className="mt-6 space-y-6">
+                 <h4 className="text-lg font-semibold text-gray-900">Analytics & Charts</h4>
+                 
+                 {/* Revenue & Profit Trend */}
+                 <div className="bg-white rounded-lg border border-green-200 p-4">
+                   <h5 className="text-md font-semibold text-gray-900 mb-4">Revenue & Profit Trend</h5>
+                   <ResponsiveContainer width="100%" height={300}>
+                     <LineChart data={[
+                       { period: 'Before', revenue: result.before.revenue, profit: result.before.profit },
+                       { period: 'After', revenue: result.after.revenue, profit: result.after.profit }
+                     ]}>
+                       <CartesianGrid strokeDasharray="3 3" />
+                       <XAxis dataKey="period" />
+                       <YAxis />
+                       <Tooltip formatter={(value) => [`$${(value as number).toFixed(2)}`, '']} />
+                       <Legend />
+                       <Line type="monotone" dataKey="revenue" stroke="#3b82f6" strokeWidth={2} name="Revenue" />
+                       <Line type="monotone" dataKey="profit" stroke="#10b981" strokeWidth={2} name="Profit" />
+                     </LineChart>
+                   </ResponsiveContainer>
+                 </div>
+
+                 {/* Impact Comparison */}
+                 <div className="bg-white rounded-lg border border-green-200 p-4">
+                   <h5 className="text-md font-semibold text-gray-900 mb-4">Impact Comparison</h5>
+                   <ResponsiveContainer width="100%" height={300}>
+                     <BarChart data={[
+                       { metric: 'Revenue Change', value: result.impact.revenue_change, color: result.impact.revenue_change >= 0 ? '#10b981' : '#ef4444' },
+                       { metric: 'Profit Change', value: result.impact.profit_change, color: result.impact.profit_change >= 0 ? '#10b981' : '#ef4444' },
+                       { metric: 'Percentage', value: result.impact.percentage_change, color: result.impact.percentage_change >= 0 ? '#10b981' : '#ef4444' }
+                     ]}>
+                       <CartesianGrid strokeDasharray="3 3" />
+                       <XAxis dataKey="metric" />
+                       <YAxis />
+                       <Tooltip formatter={(value) => [typeof value === 'number' ? (value >= 0 ? '+' : '') + (value as number).toFixed(2) : value, '']} />
+                       <Bar dataKey="value" fill="#3b82f6" />
+                     </BarChart>
+                   </ResponsiveContainer>
+                 </div>
+
+                 {/* Confidence Distribution */}
+                 <div className="bg-white rounded-lg border border-green-200 p-4">
+                   <h5 className="text-md font-semibold text-gray-900 mb-4">Confidence Level</h5>
+                   <ResponsiveContainer width="100%" height={300}>
+                     <PieChart>
+                       <Pie
+                         data={[
+                           { name: 'Confidence', value: result.confidence, color: result.confidence >= 80 ? '#10b981' : result.confidence >= 60 ? '#f59e0b' : '#ef4444' },
+                           { name: 'Uncertainty', value: 100 - result.confidence, color: '#e5e7eb' }
+                         ]}
+                         cx="50%"
+                         cy="50%"
+                         innerRadius={60}
+                         outerRadius={100}
+                         paddingAngle={5}
+                         dataKey="value"
+                       >
+                         {[
+                           { name: 'Confidence', value: result.confidence, color: result.confidence >= 80 ? '#10b981' : result.confidence >= 60 ? '#f59e0b' : '#ef4444' },
+                           { name: 'Uncertainty', value: 100 - result.confidence, color: '#e5e7eb' }
+                         ].map((entry, index) => (
+                           <Cell key={`cell-${index}`} fill={entry.color} />
+                         ))}
+                       </Pie>
+                       <Tooltip formatter={(value) => [`${value}%`, '']} />
+                       <Legend />
+                     </PieChart>
+                   </ResponsiveContainer>
+                 </div>
+               </div>
+             </div>
+           )}
+         </motion.div>
+       );
+     }

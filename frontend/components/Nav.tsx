@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { logout } from '@/lib/api';
+import { logout } from '../lib/api';
+import LanguageToggle from './LanguageToggle';
 
 export default function Nav() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -14,6 +15,7 @@ export default function Nav() {
     { name: 'Dashboard', href: '/dashboard', current: pathname === '/dashboard' },
     { name: 'Upload', href: '/upload', current: pathname === '/upload' },
     { name: 'Simulation', href: '/simulation', current: pathname === '/simulation' },
+    { name: 'Voice', href: '/voice', current: pathname === '/voice' },
     { name: 'History', href: '/history', current: pathname === '/history' },
   ];
 
@@ -50,10 +52,11 @@ export default function Nav() {
           </div>
 
           {/* Right side - User menu and logout */}
-          <div className="flex items-center">
+          <div className="flex items-center space-x-3">
+            <LanguageToggle />
             <button
               onClick={handleLogout}
-              className="ml-3 inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+              className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
             >
               Logout
             </button>

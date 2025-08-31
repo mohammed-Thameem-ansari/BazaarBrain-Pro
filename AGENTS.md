@@ -37,3 +37,45 @@ Both Reality Capture and Simulation agents use dual LLM processing with intellig
 - **Single LLM Success** → Use available result
 - **Conflicting Results** → Merge or prefer more detailed output
 - **Both Failed** → Fallback to basic parsing
+
+## Database Integration Workflows
+
+### Reality Capture Agent Database Flow
+
+1. **Image Processing**: Agent processes receipt/bill images using dual LLM OCR
+2. **Result Arbitration**: Applies intelligent arbitration logic to combine GPT + Gemini outputs
+3. **Automatic Storage**: Automatically calls `db.save_transaction()` with:
+   - `user_id`: Extracted from JWT token
+   - `raw_input`: Original image path/filename
+   - `parsed_json`: Structured OCR results
+   - `source`: Processing source type (image, receipt, bill)
+4. **Transaction ID**: Returns transaction ID for future reference
+5. **Error Handling**: Gracefully handles database failures with fallback logging
+
+### Simulation Agent Database Flow
+
+1. **Query Processing**: Agent parses natural language business queries using dual LLMs
+2. **Parameter Extraction**: Extracts structured parameters (scenario, item, change, etc.)
+3. **Simulation Execution**: Runs mathematical simulations based on extracted parameters
+4. **Automatic Storage**: Automatically calls `db.save_simulation()` with:
+   - `user_id`: Extracted from JWT token
+   - `query`: Original natural language query
+   - `parameters`: Structured simulation parameters
+   - `result`: Complete simulation results and analysis
+5. **Simulation ID**: Returns simulation ID for future reference
+6. **Error Handling**: Gracefully handles database failures with fallback logging
+
+### Database Schema Integration
+
+Both agents integrate with the following database tables:
+
+- **`transactions`**: Stores OCR results with user association
+- **`simulations`**: Stores business simulation queries and results
+- **`users`**: Links all data to authenticated user accounts
+
+### Error Handling and Fallbacks
+
+- **Database Unavailable**: Agents continue processing with local result storage
+- **Save Failures**: Results logged locally with error tracking
+- **Partial Failures**: Graceful degradation with available functionality
+- **User Feedback**: Clear error messages and status reporting
