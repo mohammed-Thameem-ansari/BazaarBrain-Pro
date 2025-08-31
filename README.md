@@ -1,7 +1,7 @@
 # BazaarBrain-Pro
 
 ## 🚀 One-line Pitch
-AI-powered collective bargaining + financial intelligence for small shopkeepers.
+BazaarBrain: AI-powered business assistant for shopkeepers using GPT + Gemini.
 
 ## ✨ Key Features
 - Capture receipts, voice, or sales logs.
