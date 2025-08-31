@@ -1,0 +1,24 @@
+# Frontend Dockerfile for BazaarBrain-Pro
+# Build (from repo root):
+#   docker build -t bazaarbrain-frontend -f deploy/Dockerfile.frontend .
+# Run (bind to 3000):
+#   docker run --rm -p 3000:3000 --env-file frontend/.env.production bazaarbrain-frontend
+
+FROM node:20-alpine
+
+WORKDIR /app/frontend
+
+# Install dependencies
+COPY frontend/package*.json ./
+RUN npm ci || npm install
+
+# Copy source
+COPY frontend/ ./
+
+ENV NODE_ENV=production
+
+# Expose Next.js port
+EXPOSE 3000
+
+# Build then start
+CMD ["/bin/sh", "-c", "npm run build && npm start"]
