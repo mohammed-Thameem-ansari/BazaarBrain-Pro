@@ -18,7 +18,7 @@ import base64
 from io import BytesIO
 
 from ..db import save_transaction, get_transactions
-from ..agents.reality_capture_agent import RealityCaptureAgent
+from agents.reality_capture_agent import RealityCaptureAgent
 from ..auth import get_current_user_id
 
 logger = logging.getLogger(__name__)
@@ -195,6 +195,41 @@ async def get_transaction(
             status_code=500,
             detail=f"Internal server error: {str(e)}"
         )
+
+@router.post("/transactions")
+async def create_transaction(
+    data: Dict[str, Any],
+    current_user_id: str = Depends(get_current_user_id)
+) -> Dict[str, Any]:
+    """
+    Create a transaction directly via JSON body. Useful for testing and non-image sources.
+    Expects: { source: str, parsed_json: dict, raw_input: str }
+    """
+    try:
+        source = data.get("source", "api")
+        parsed_json = data.get("parsed_json") or {}
+        raw_input = data.get("raw_input", "api_request")
+
+        transaction_id = save_transaction(
+            user_id=current_user_id,
+            raw_input=raw_input,
+            parsed_json=parsed_json,
+            source=source,
+        )
+        if not transaction_id:
+            raise HTTPException(status_code=500, detail="Failed to save transaction to database")
+
+        return {
+            "success": True,
+            "transaction_id": transaction_id,
+            "message": "Transaction created successfully",
+            "created_at": datetime.utcnow().isoformat(),
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error creating transaction: {e}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 @router.delete("/transactions/{transaction_id}")
 async def delete_transaction(

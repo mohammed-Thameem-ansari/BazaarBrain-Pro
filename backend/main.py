@@ -19,6 +19,7 @@ from datetime import datetime
 from .routers import health, receipts, simulations
 from .db import health_check as db_health_check
 from .config import config
+from .auth import auth_middleware
 
 # Configure logging
 logging.basicConfig(
@@ -37,13 +38,21 @@ app = FastAPI(
 )
 
 # Add CORS middleware
+if config.ALLOWED_ORIGINS == ["*"]:
+    allow_origins = ["*"]
+else:
+    allow_origins = config.ALLOWED_ORIGINS
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Configure this properly for production
+    allow_origins=allow_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Add auth logging middleware
+app.middleware("http")(auth_middleware)
 
 # Global exception handler
 @app.exception_handler(Exception)
@@ -125,7 +134,7 @@ async def shutdown_event():
 if __name__ == "__main__":
     # Run the application
     uvicorn.run(
-        "main:app",
+    "backend.main:app",
         host="0.0.0.0",
         port=8000,
         reload=config.DEBUG,

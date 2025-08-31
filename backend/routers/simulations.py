@@ -16,7 +16,7 @@ from typing import Dict, Any, List, Optional
 import uuid
 
 from ..db import save_simulation, get_simulations
-from ..agents.simulation_agent import SimulationAgent
+from agents.simulation_agent import SimulationAgent
 from ..auth import get_current_user_id
 
 logger = logging.getLogger(__name__)
