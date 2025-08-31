@@ -54,20 +54,30 @@ This document defines the agents in BazaarBrain Pro, specifying their inputs, ou
 
 ## 3. Simulation Agent
 
-**Purpose:** Simulates financial/business outcomes (e.g., “What if sales increase 20%?”).
+**Purpose:** Simulates financial/business outcomes (e.g., “What if sales increase 20%?”, bulk order savings, price changes).
 
 **Inputs:**
-- `scenario_description`: string (user’s what-if question)
+- `scenario_description`: string (user’s what-if question, e.g., "What if I increase rice price by 5%?" or "Order 200 rice in bulk")
 - `historical_data`: JSON (sales records)
 
-**Outputs:**
+**Outputs (structured):**
 ```json
 {
-  "scenario": "20% sales increase",
-  "predicted_revenue": 12500,
-  "impact": "Profit increases by 15%"
+  "scenario": "price_increase|price_decrease|bulk_order|quantity_change|cost_change",
+  "item": "Rice",
+  "change": "+5%",
+  "before": { "revenue": 1000, "profit": 200, "quantity": 100, "price": 10 },
+  "after": { "revenue": 1050, "profit": 210, "quantity": 98, "price": 10.5 },
+  "impact": { "revenue_change": 50, "profit_change": 10, "percentage_change": 5 },
+  "recommendations": ["Consider gradual changes"],
+  "assumptions": ["Elasticity ~ -0.2"],
+  "confidence": 82
 }
 ```
+
+The agent arbitrates between GPT and Gemini outputs and returns a consistent JSON. For bulk orders, it includes savings/cost effects and may include revenue/profit fields.
+
+Offline fallback: if DB persistence fails, the agent logs a local marker and returns results to the caller without blocking the user.
 
 **Example prompt:**
 > Given this sales history JSON, simulate what happens if sales increase by 20%.
@@ -112,6 +122,11 @@ This document defines the agents in BazaarBrain Pro, specifying their inputs, ou
 **Example prompt:**
 > Combine these orders from different shopkeepers into one bulk order and suggest a bargaining strategy.
 
+Day 7 TODOs:
+- Add role-based access controls to sensitive agent actions.
+- Persist collective participants per product and surface in outputs.
+- Integrate Reality Capture-derived stock levels into SimulationAgent assumptions.
+
 ---
 
 ## 6. Arbitration Agent
@@ -132,6 +147,3 @@ This document defines the agents in BazaarBrain Pro, specifying their inputs, ou
 **Example prompt:**
 > Compare these two answers. Pick the clearer and more useful one for a shopkeeper.
 
----
-
-✅ End of Milestone 2 Deliverable
