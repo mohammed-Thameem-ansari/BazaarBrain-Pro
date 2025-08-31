@@ -39,7 +39,7 @@ export default function TransactionHistory() {
     }
   };
 
-  const handleFilterChange = (key: keyof TransactionFilters, value: string | number) => {
+  const handleFilterChange = (key: keyof TransactionFilters, value: string | number | undefined) => {
     setFilters(prev => ({ ...prev, [key]: value }));
     setCurrentPage(1);
     setFilters(prev => ({ ...prev, offset: 0 }));
@@ -253,7 +253,13 @@ export default function TransactionHistory() {
           <div className="px-6 py-4 border-t border-gray-200">
             <div className="flex items-center justify-between">
               <div className="text-sm text-gray-700">
-                Showing {filters.offset + 1} to {Math.min(filters.offset + (filters.limit || 20), total)} of {total} results
+                {(() => {
+                  const offset = filters.offset || 0;
+                  const limit = filters.limit || 20;
+                  const start = offset + 1;
+                  const end = Math.min(offset + limit, total);
+                  return `Showing ${start} to ${end} of ${total} results`;
+                })()}
               </div>
               <div className="flex space-x-2">
                 <button
