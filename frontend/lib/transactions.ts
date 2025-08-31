@@ -135,7 +135,12 @@ export const transactionsAPI = {
         Source: '',
         Store: '',
         TotalItems: csvData.reduce((sum, row) => sum + (parseInt(row.TotalItems) || 0), 0),
-        TotalAmount: `$${csvData.reduce((sum, row) => sum + parseFloat(row.TotalAmount.replace('$', '') || 0), 0).toFixed(2)}`,
+        TotalAmount: `$${csvData
+          .reduce((sum: number, row) => {
+            const numeric = parseFloat(String(row.TotalAmount).replace('$', '')) || 0;
+            return sum + numeric;
+          }, 0)
+          .toFixed(2)}`,
         AverageItemPrice: '',
         Items: '',
         PaymentMethod: '',
