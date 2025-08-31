@@ -9,9 +9,10 @@ This module handles all database operations including:
 
 import os
 import json
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional, Any, Tuple
 from datetime import datetime
 import uuid
+import sqlite3
 
 try:
     from supabase import create_client, Client
@@ -238,6 +239,142 @@ class DatabaseManager:
         except Exception as e:
             print(f"❌ Error retrieving simulations: {e}")
             return []
+
+    # Day 6: Collective Orders CRUD
+    def save_collective_order(self, order: Dict[str, Any]) -> Optional[str]:
+        """Save a collective order to Supabase."""
+        try:
+            if not self.client:
+                print("❌ Database not connected")
+                return None
+
+            payload = {
+                "order_id": str(uuid.uuid4()),
+                "user_id": order["user_id"],
+                "product_id": order["product_id"],
+                "quantity": int(order["quantity"]),
+                "price_per_unit": float(order.get("price_per_unit", 0)),
+                "created_at": datetime.utcnow().isoformat(),
+            }
+            res = self.client.table("collective_orders").insert(payload).execute()
+            if res.data:
+                return payload["order_id"]
+            return None
+        except Exception as e:
+            print(f"❌ Error saving collective order: {e}")
+            return None
+
+    def get_collective_orders(self) -> List[Dict[str, Any]]:
+        """Fetch aggregated collective orders by product_id."""
+        try:
+            if not self.client:
+                print("❌ Database not connected")
+                return []
+            # Return most recent aggregates per product
+            res = (
+                self.client.rpc(
+                    "",  # fallback: select with group by when rpc not available
+                )
+            )
+        except Exception:
+            # Fallback to manual aggregation through select
+            try:
+                result = (
+                    self.client.table("collective_orders")
+                    .select("product_id, aggregated_quantity, price_per_unit")
+                    .order("updated_at", desc=True)
+                    .execute()
+                )
+                # Reduce to latest per product
+                latest: Dict[str, Dict[str, Any]] = {}
+                for row in (result.data or []):
+                    pid = row["product_id"]
+                    if pid not in latest:
+                        latest[pid] = row
+                return list(latest.values())
+            except Exception as e:
+                print(f"❌ Error retrieving collective orders: {e}")
+                return []
+
+    # Day 6: Offline ledger (SQLite)
+    def _sqlite_conn(self) -> sqlite3.Connection:
+        conn = sqlite3.connect("offline_ledger.db")
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS transactions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                order_id TEXT,
+                user_id TEXT,
+                product_id TEXT,
+                quantity INTEGER,
+                price_per_unit REAL,
+                synced INTEGER DEFAULT 0
+            )
+            """
+        )
+        return conn
+
+    def save_offline_transaction(self, txn: Dict[str, Any]) -> int:
+        try:
+            conn = self._sqlite_conn()
+            cur = conn.cursor()
+            cur.execute(
+                "INSERT INTO transactions(order_id, user_id, product_id, quantity, price_per_unit, synced) VALUES(?,?,?,?,?,0)",
+                (
+                    txn.get("order_id"),
+                    txn.get("user_id"),
+                    txn.get("product_id"),
+                    int(txn.get("quantity", 0)),
+                    float(txn.get("price_per_unit", 0)),
+                ),
+            )
+            conn.commit()
+            rowid = cur.lastrowid
+            conn.close()
+            return rowid
+        except Exception as e:
+            print(f"❌ Offline save failed: {e}")
+            return -1
+
+    def _unsynced_transactions(self) -> List[Tuple]:
+        conn = self._sqlite_conn()
+        cur = conn.cursor()
+        cur.execute("SELECT id, order_id, user_id, product_id, quantity, price_per_unit FROM transactions WHERE synced = 0")
+        rows = cur.fetchall()
+        conn.close()
+        return rows
+
+    def sync_to_supabase(self) -> int:
+        """Try to push unsynced offline transactions to Supabase. Returns number synced."""
+        if not self.client:
+            return 0
+        rows = self._unsynced_transactions()
+        if not rows:
+            return 0
+        synced = 0
+        conn = self._sqlite_conn()
+        try:
+            for row in rows:
+                _id, order_id, user_id, product_id, quantity, price_per_unit = row
+                payload = {
+                    "order_id": order_id or str(uuid.uuid4()),
+                    "user_id": user_id,
+                    "product_id": product_id,
+                    "quantity": quantity,
+                    "price_per_unit": price_per_unit,
+                    "created_at": datetime.utcnow().isoformat(),
+                }
+                try:
+                    res = self.client.table("collective_orders").insert(payload).execute()
+                    if res.data:
+                        conn.execute("UPDATE transactions SET synced = 1 WHERE id = ?", (_id,))
+                        synced += 1
+                except Exception:
+                    pass
+            conn.commit()
+        finally:
+            conn.close()
+        return synced
     
     def get_user_by_email(self, email: str) -> Optional[Dict[str, Any]]:
         """
@@ -358,3 +495,19 @@ def create_user(email: str, password: Optional[str] = None) -> Optional[str]:
 def health_check() -> bool:
     """Check database health."""
     return db.health_check()
+
+# Day 6 convenience exports
+def save_collective_order(order: Dict[str, Any]) -> Optional[str]:
+    return db.save_collective_order(order)
+
+
+def get_collective_orders() -> List[Dict[str, Any]]:
+    return db.get_collective_orders()
+
+
+def save_offline_transaction(txn: Dict[str, Any]) -> int:
+    return db.save_offline_transaction(txn)
+
+
+def sync_to_supabase() -> int:
+    return db.sync_to_supabase()

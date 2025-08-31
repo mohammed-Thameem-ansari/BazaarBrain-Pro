@@ -416,6 +416,8 @@ class SimulationAgent:
                 "savings_per_unit": round(savings_per_unit, 2),
                 "weekly_savings": round(total_savings, 2),
                 "profit_impact": round(profit_impact, 2),
+                "revenue": round(bulk_price * weekly_sales, 2),
+                "profit": round((bulk_price - current_cost) * weekly_sales, 2),
                 "assumptions": f"Bulk discount of {discount_percent}% for {num_shops} shops",
                 "recommendation": "Consider forming buying groups for better supplier rates"
             }
@@ -466,7 +468,7 @@ class SimulationAgent:
         # Run simulation
         logger.info("Running simulation...")
         simulation_result = self.run_simulation(final_parsed)
-        
+
         # Combine results
         final_result = {
             "query": query,
@@ -474,14 +476,15 @@ class SimulationAgent:
             "simulation_results": simulation_result,
             "timestamp": str(Path(".").stat().st_mtime)
         }
-        
+
         # Store results locally
         self._store_results(query, gpt_parsed, gemini_parsed, final_result)
-        
+
         # Save to database if requested and user_id provided
         if save_to_db and user_id:
             try:
                 from backend.db import save_simulation
+                from backend.db import save_offline_transaction
                 # Extract parameters for storage
                 parameters = {
                     "scenario": final_parsed.get("scenario"),
@@ -489,7 +492,7 @@ class SimulationAgent:
                     "change": final_parsed.get("change"),
                     "current_data": current_data or {}
                 }
-                
+
                 simulation_id = save_simulation(
                     user_id=user_id,
                     query=query,
@@ -500,11 +503,22 @@ class SimulationAgent:
                     final_result["simulation_id"] = simulation_id
                     logger.info(f"Simulation saved to database with ID: {simulation_id}")
                 else:
-                    logger.warning("Failed to save simulation to database")
+                    logger.warning("Failed to save simulation to database; logging offline")
+                    try:
+                        # store minimal offline txn to indicate unsynced sim (reusing ledger)
+                        save_offline_transaction({
+                            "order_id": None,
+                            "user_id": user_id,
+                            "product_id": final_parsed.get("item"),
+                            "quantity": 0,
+                            "price_per_unit": 0,
+                        })
+                    except Exception:
+                        pass
             except Exception as e:
                 logger.error(f"Database save failed: {e}")
                 final_result["db_save_error"] = str(e)
-        
+
         logger.info("Simulation complete")
         return final_result
     

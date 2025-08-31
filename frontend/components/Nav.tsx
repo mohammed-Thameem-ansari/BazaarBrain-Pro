@@ -5,10 +5,12 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { logout } from '../lib/api';
 import LanguageToggle from './LanguageToggle';
+import { useOffline } from '../contexts/OfflineContext';
 
 export default function Nav() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
+  const { unsyncedCount } = useOffline();
 
   const navigation = [
     { name: 'Home', href: '/', current: pathname === '/' },
@@ -16,6 +18,7 @@ export default function Nav() {
     { name: 'Upload', href: '/upload', current: pathname === '/upload' },
     { name: 'Simulation', href: '/simulation', current: pathname === '/simulation' },
     { name: 'Voice', href: '/voice', current: pathname === '/voice' },
+  { name: 'Collective', href: '/dashboard/collective', current: pathname === '/dashboard/collective' },
     { name: 'History', href: '/history', current: pathname === '/history' },
   ];
 
@@ -54,6 +57,11 @@ export default function Nav() {
           {/* Right side - User menu and logout */}
           <div className="flex items-center space-x-3">
             <LanguageToggle />
+            {unsyncedCount > 0 && (
+              <span className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800" title="Unsynced offline transactions">
+                {unsyncedCount} unsynced
+              </span>
+            )}
             <button
               onClick={handleLogout}
               className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"

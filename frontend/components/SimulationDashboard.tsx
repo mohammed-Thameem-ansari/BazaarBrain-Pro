@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { simulationsAPI, SimulationResult } from '../lib/simulations';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTextToSpeech } from '../lib/tts';
 
 interface SimulationDashboardProps {
   initialQuery?: string;
@@ -16,6 +17,7 @@ export default function SimulationDashboard({ initialQuery = '', onSimulationCom
   const [result, setResult] = useState<SimulationResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showAdvancedForm, setShowAdvancedForm] = useState(false);
+  const { speak, muted, toggleMute } = useTextToSpeech();
 
   // Advanced form fields
   const [scenario, setScenario] = useState('price_change');
@@ -37,6 +39,11 @@ export default function SimulationDashboard({ initialQuery = '', onSimulationCom
       if (response.success) {
         setResult(response.result);
         onSimulationComplete?.(response.result);
+        try {
+          const r = response.result;
+          const summary = `Simulation complete. Scenario: ${r.scenario}. Revenue change ${r.impact.revenue_change.toFixed(2)} dollars, profit change ${r.impact.profit_change.toFixed(2)} dollars. Confidence ${r.confidence} percent.`;
+          speak(summary);
+        } catch {}
       } else {
         setError(response.error || 'Simulation failed');
       }
@@ -85,6 +92,9 @@ export default function SimulationDashboard({ initialQuery = '', onSimulationCom
         <p className="text-lg text-gray-600">
           Ask "what if" questions to analyze business scenarios and get AI-powered insights
         </p>
+        <button onClick={toggleMute} className="mt-2 text-sm text-blue-600 hover:text-blue-700">
+          {muted ? 'Unmute voice' : 'Mute voice'}
+        </button>
       </motion.div>
 
       {/* Natural Language Input */}

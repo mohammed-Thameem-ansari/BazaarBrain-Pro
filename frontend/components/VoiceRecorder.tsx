@@ -11,7 +11,7 @@ interface VoiceRecorderProps {
 }
 
 const VoiceRecorder = ({ onTranscript, onError }: VoiceRecorderProps) => {
-  const { t } = useLanguage();
+  const { t, speechLocale } = useLanguage();
   const [isRecording, setIsRecording] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [transcript, setTranscript] = useState('');
@@ -68,7 +68,7 @@ const VoiceRecorder = ({ onTranscript, onError }: VoiceRecorderProps) => {
         recognitionRef.current = new SpeechRecognition();
         recognitionRef.current.continuous = true;
         recognitionRef.current.interimResults = true;
-        recognitionRef.current.lang = 'en-US'; // Can be made dynamic based on language
+  recognitionRef.current.lang = speechLocale;
 
         recognitionRef.current.onresult = (event) => {
           let finalTranscript = '';

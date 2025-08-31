@@ -3,9 +3,10 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 interface LanguageContextType {
-  language: string;
+  language: string; // 'en' | 'hi' | ...
   setLanguage: (lang: string) => void;
   t: (key: string) => string;
+  speechLocale: string; // e.g., 'en-US' | 'hi-IN'
 }
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
@@ -26,6 +27,25 @@ const translations = {
     'voice.clickStop': 'Click "Stop Recording" when finished',
     'voice.playback': 'Use "Play" to hear your recording',
     'voice.transcriptText': 'Your speech will be converted to text automatically',
+    'voice.mute': 'Mute',
+    'voice.unmute': 'Unmute',
+  },
+  hi: {
+    'voice.recorder': 'आवाज़ रिकॉर्डर',
+    'voice.startRecording': 'रिकॉर्डिंग शुरू करें',
+    'voice.stopRecording': 'रिकॉर्डिंग रोकें',
+    'voice.recording': 'रिकॉर्डिंग... अभी बोलें!',
+    'voice.transcript': 'ट्रांसक्रिप्ट:',
+    'voice.play': 'चलाएँ',
+    'voice.playing': 'चल रहा है...',
+    'voice.clear': 'साफ़ करें',
+    'voice.howToUse': 'कैसे उपयोग करें:',
+    'voice.clickStart': '"रिकॉर्डिंग शुरू करें" पर क्लिक करें और स्पष्ट रूप से बोलें',
+    'voice.clickStop': 'खत्म होने पर "रिकॉर्डिंग रोकें" पर क्लिक करें',
+    'voice.playback': 'अपनी रिकॉर्डिंग सुनने के लिए "चलाएँ" का उपयोग करें',
+    'voice.transcriptText': 'आपकी आवाज़ स्वतः पाठ में बदल दी जाएगी',
+    'voice.mute': 'म्यूट',
+    'voice.unmute': 'अनम्यूट',
   },
   es: {
     'voice.recorder': 'Grabadora de Voz',
@@ -67,7 +87,7 @@ export function LanguageProvider({ children }: LanguageProviderProps) {
   };
 
   return (
-    <LanguageContext.Provider value={{ language, setLanguage: handleLanguageChange, t }}>
+  <LanguageContext.Provider value={{ language, setLanguage: handleLanguageChange, t, speechLocale: language === 'hi' ? 'hi-IN' : 'en-US' }}>
       {children}
     </LanguageContext.Provider>
   );

@@ -108,3 +108,57 @@ FROM information_schema.columns
 WHERE table_schema = 'public' 
     AND table_name IN ('users', 'transactions', 'simulations')
 ORDER BY table_name, ordinal_position;
+
+-- Day 6: Collective Orders table and triggers
+
+-- Collective Orders table (persistent aggregation)
+CREATE TABLE IF NOT EXISTS collective_orders (
+        order_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+        product_id TEXT NOT NULL,
+        quantity INTEGER NOT NULL CHECK (quantity > 0),
+        aggregated_quantity INTEGER NOT NULL DEFAULT 0,
+        price_per_unit NUMERIC(12,2) NOT NULL DEFAULT 0,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Aggregation helper function: updates aggregated_quantity per product_id
+CREATE OR REPLACE FUNCTION update_collective_aggregate()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Recompute aggregated_quantity for all rows with this product_id
+    UPDATE collective_orders co
+    SET aggregated_quantity = sub.total_qty,
+            updated_at = NOW()
+    FROM (
+        SELECT product_id, SUM(quantity) AS total_qty
+        FROM collective_orders
+        WHERE product_id = NEW.product_id
+        GROUP BY product_id
+    ) AS sub
+    WHERE co.product_id = sub.product_id;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Trigger on insert/update
+DROP TRIGGER IF EXISTS trg_collective_aggregate_ins ON collective_orders;
+CREATE TRIGGER trg_collective_aggregate_ins
+AFTER INSERT ON collective_orders
+FOR EACH ROW EXECUTE FUNCTION update_collective_aggregate();
+
+DROP TRIGGER IF EXISTS trg_collective_aggregate_upd ON collective_orders;
+CREATE TRIGGER trg_collective_aggregate_upd
+AFTER UPDATE ON collective_orders
+FOR EACH ROW EXECUTE FUNCTION update_collective_aggregate();
+
+-- Sample data for collective orders (optional)
+-- Insert three sample orders for product 'rice'
+INSERT INTO collective_orders (user_id, product_id, quantity, price_per_unit)
+SELECT u.id, 'rice', 50, 47.50 FROM users u LIMIT 1;
+INSERT INTO collective_orders (user_id, product_id, quantity, price_per_unit)
+SELECT u.id, 'rice', 75, 46.00 FROM users u LIMIT 1;
+INSERT INTO collective_orders (user_id, product_id, quantity, price_per_unit)
+SELECT u.id, 'sugar', 40, 38.00 FROM users u LIMIT 1;
+

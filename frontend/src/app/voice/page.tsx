@@ -4,11 +4,14 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Nav from '../../../components/Nav';
 import VoiceRecorder from '../../../components/VoiceRecorder';
+import API from '../../../lib/api';
+import { useTextToSpeech } from '../../../lib/tts';
 
 export default function VoicePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [transcript, setTranscript] = useState('');
   const router = useRouter();
+  const { speak, muted, toggleMute } = useTextToSpeech();
 
   useEffect(() => {
     // Check if user is authenticated
@@ -22,7 +25,18 @@ export default function VoicePage() {
 
   const handleTranscript = (text: string) => {
     setTranscript(text);
-    console.log('Voice transcript:', text);
+    // Auto-send to intake when user pauses speaking
+    if (text && text.length > 4) {
+      API.post('/api/v1/intake', { text })
+        .then((res) => {
+          const routed = res.data?.routed;
+          const message = routed?.message || routed?.result?.recommendations?.[0] || 'Processed.';
+          speak(`Got it. ${message}`);
+        })
+        .catch(() => {
+          // swallow for UX; error banner below
+        });
+    }
   };
 
   const handleError = (error: string) => {
@@ -50,6 +64,9 @@ export default function VoicePage() {
             <p className="text-lg text-gray-600">
               Test voice recording and speech-to-text functionality
             </p>
+            <button onClick={toggleMute} className="mt-3 text-sm text-blue-600 hover:text-blue-700">
+              {muted ? 'Unmute voice' : 'Mute voice'}
+            </button>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">

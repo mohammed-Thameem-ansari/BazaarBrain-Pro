@@ -4,6 +4,12 @@
 
 BazaarBrain Frontend is a modern React application built with Next.js, providing an intuitive interface for shopkeepers to interact with AI-powered business intelligence tools. The application features voice interfaces, real-time analytics, and comprehensive transaction management.
 
+### Day 6 additions:
+- Collective Orders dashboard with offline-first UX (unsynced badge in nav)
+- Voice page wired to Intake endpoint; TTS summaries with mute toggle
+- Simulation dashboard narrates result summaries via TTS
+- AuthContext for JWT storage/usage; OfflineContext for unsynced counter
+
 ## Tech Stack
 
 ### Core Technologies
@@ -36,8 +42,8 @@ frontend/
 │   ├── app/                    # Next.js App Router pages
 │   │   ├── dashboard/          # Dashboard page
 │   │   ├── login/             # Authentication page
-│   │   ├── upload/            # Receipt upload page
-│   │   ├── simulation/        # Business simulation page
+const API = axios.create({
+  baseURL: process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000',
 │   │   ├── voice/             # Voice interface page
 │   │   ├── history/           # Transaction history page
 │   │   ├── globals.css        # Global styles
@@ -138,6 +144,28 @@ function Layout() {
       <main>{children}</main>
     </div>
   );
+  ### Collective Orders & Offline Ledger
+
+  - Page: `src/app/dashboard/collective/page.tsx`
+  - Client: `lib/collective.ts`
+  - Backend endpoints:
+    - POST `/api/v1/collective_order` to place/join
+    - GET `/api/v1/collective_order` to read aggregates
+
+  Offline behavior:
+  - If POST fails (e.g., no network), the UI increments an unsynced counter via `OfflineContext` and shows a badge in `Nav`.
+  - On subsequent GET, backend tries to sync the SQLite offline ledger into Supabase when available.
+
+  ### Voice Integration
+
+  - Page: `src/app/voice/page.tsx` uses `VoiceRecorder` and calls `/api/v1/intake`.
+  - TTS: `lib/tts.ts` provides `useTextToSpeech()` with a mute toggle and locale from `LanguageContext`.
+
+  ### Simulation Dashboard with TTS
+
+  - Component: `components/SimulationDashboard.tsx`
+  - Calls `/api/v1/simulate` and speaks a concise summary.
+
 }
 ```
 

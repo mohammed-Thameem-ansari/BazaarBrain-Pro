@@ -43,3 +43,26 @@ Object.defineProperty(window, 'matchMedia', {
     dispatchEvent: jest.fn(),
   })),
 })
+
+// Mock Web Speech API (speechSynthesis) for tests using TTS
+if (!('speechSynthesis' in window)) {
+  window.speechSynthesis = {
+    speak: jest.fn(),
+    cancel: jest.fn(),
+    paused: false,
+    pending: false,
+    speaking: false,
+    getVoices: jest.fn(() => []),
+    pause: jest.fn(),
+    resume: jest.fn(),
+    addEventListener: jest.fn(),
+    removeEventListener: jest.fn(),
+    onvoiceschanged: null,
+  }
+}
+
+if (!('SpeechSynthesisUtterance' in window)) {
+  // Minimal constructor stub
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  window.SpeechSynthesisUtterance = function (text) { this.text = text; this.lang = 'en-US'; this.rate = 1; this.pitch = 1 }
+}

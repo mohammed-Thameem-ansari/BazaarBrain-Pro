@@ -35,3 +35,19 @@ docker push ${USER}/bazaarbrain-backend
 #   --set-env-vars "ENVIRONMENT=production,LOG_LEVEL=INFO"
 
 LOG "For Vercel, connect the frontend directory and configure NEXT_PUBLIC_* env vars."
+
+# Optional: Post-deploy health check
+# API_URL="https://your-cloud-run-url" 
+# LOG "Checking health at ${API_URL}/health ..."
+# set +e
+# http_code=$(curl -s -o /dev/null -w "%{http_code}" "${API_URL}/health")
+# set -e
+# if [ "$http_code" != "200" ]; then
+#   LOG "Health check failed (status=${http_code}). Consider rollback."
+#   # Rollback tips:
+#   # - Re-deploy previous image tag
+#   # - For Cloud Run: gcloud run services update-traffic --to-revisions <prev-rev>=100
+#   # - For Docker Compose: docker compose rollback (Compose V2) or re-tag and redeploy previous image
+#   exit 1
+# fi
+# LOG "Health check OK."

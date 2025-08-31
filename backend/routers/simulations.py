@@ -14,6 +14,7 @@ import logging
 from datetime import datetime
 from typing import Dict, Any, List, Optional
 import uuid
+from pydantic import BaseModel
 
 from ..db import save_simulation, get_simulations
 from agents.simulation_agent import SimulationAgent
@@ -25,9 +26,13 @@ router = APIRouter()
 # Initialize the Simulation Agent
 simulation_agent = SimulationAgent()
 
+class SimulationRequest(BaseModel):
+    query: str
+
+
 @router.post("/simulate")
 async def run_simulation(
-    query: str,
+    payload: SimulationRequest,
     current_user_id: str = Depends(get_current_user_id)
 ) -> Dict[str, Any]:
     """
@@ -42,6 +47,7 @@ async def run_simulation(
     """
     try:
         # Validate query
+        query = payload.query
         if not query or len(query.strip()) < 10:
             raise HTTPException(
                 status_code=400,

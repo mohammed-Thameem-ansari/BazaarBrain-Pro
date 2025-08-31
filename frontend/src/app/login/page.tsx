@@ -1,19 +1,32 @@
 'use client';
 
 import { useState } from 'react';
+import { authAPI } from '../../../lib/auth';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [token, setToken] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    // TODO: Implement actual email/password login with Supabase
-    console.log('Email login:', { email, password });
-    setIsLoading(false);
+    setError(null);
+    try {
+      const res = await authAPI.login({ email, password });
+      if (res.success && res.token) {
+        localStorage.setItem('BB_TOKEN', res.token);
+        window.location.href = '/dashboard';
+      } else {
+        setError(res.error || 'Login failed');
+      }
+    } catch (err) {
+      setError('Login failed');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleDevTokenLogin = () => {
@@ -36,6 +49,9 @@ export default function LoginPage() {
         <div className="bg-white rounded-xl shadow-lg p-8 space-y-6">
           {/* Email/Password Form */}
           <form onSubmit={handleEmailLogin} className="space-y-4">
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded text-sm">{error}</div>
+            )}
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
                 Email

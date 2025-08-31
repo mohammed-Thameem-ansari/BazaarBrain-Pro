@@ -239,3 +239,30 @@ print(f"Debug: {variable_name}")
 - Add tests for new features
 - Refactor tests for better maintainability
 - Document test scenarios and expected outcomes
+
+## 🚀 New: Deploy/E2E Test Scripts
+
+These scripts live under `deploy/` to validate production-like setups:
+
+- `deploy/smoke_test.py` — Quick health and basic API pings
+- `deploy/test_docker_api.py` — API tests against a running Docker backend
+- `deploy/test_backend_prod.py` — Backend health, transactions, and upload checks
+- `deploy/test_integration.py` — Frontend↔Backend UI smoke via Playwright (optional)
+- `deploy/test_auth.py` — Auth-protected endpoints with JWT
+- `deploy/e2e_test.py` — End-to-end happy-path checks (health, transactions, upload, simulate)
+
+Usage examples:
+
+```bash
+# Health and E2E (set E2E_JWT for auth flows)
+API_BASE_URL=http://localhost:8000 python deploy/e2e_test.py
+
+# Frontend/Backend UI checks (requires Playwright)
+python -m pip install requests playwright && playwright install chromium
+python deploy/test_integration.py --frontend http://localhost:3000 --backend http://localhost:8000 --token $JWT
+```
+
+## 🧪 CI Notes
+
+- Backend CI: `.github/workflows/backend.yml` runs pytest and builds Docker image
+- Frontend CI: `.github/workflows/frontend.yml` runs Jest tests and builds the app

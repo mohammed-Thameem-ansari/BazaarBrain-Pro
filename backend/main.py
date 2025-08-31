@@ -15,8 +15,13 @@ from fastapi.responses import JSONResponse
 import uvicorn
 import logging
 from datetime import datetime
+import time
+import uuid
 
 from .routers import health, receipts, simulations
+from .routers import auth as auth_router
+from .routers import intake as intake_router
+from .routers import collective as collective_router
 from .db import health_check as db_health_check
 from .config import config
 from .auth import auth_middleware
@@ -54,6 +59,38 @@ app.add_middleware(
 # Add auth logging middleware
 app.middleware("http")(auth_middleware)
 
+# Request/response logging middleware with request ID
+@app.middleware("http")
+async def request_logger(request: Request, call_next):
+    start = time.perf_counter()
+    req_id = request.headers.get("X-Request-ID") or str(uuid.uuid4())
+    try:
+        response = await call_next(request)
+    finally:
+        duration_ms = (time.perf_counter() - start) * 1000
+        path = request.url.path
+        method = request.method
+        status = getattr(request.state, "_status_code", None) or getattr(locals().get("response", None), "status_code", None)
+        user = getattr(getattr(request, "state", object()), "user", None)
+        user_email = user.get("email") if isinstance(user, dict) else None
+        logger.info(
+            f"{method} {path} -> {status} in {duration_ms:.1f}ms",
+            extra={
+                "request_id": req_id,
+                "method": method,
+                "path": path,
+                "status_code": status,
+                "duration_ms": round(duration_ms, 2),
+                "user_email": user_email,
+            },
+        )
+    # Add request ID to response header
+    try:
+        response.headers["X-Request-ID"] = req_id
+    except Exception:
+        pass
+    return response
+
 # Global exception handler
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
@@ -72,6 +109,9 @@ async def global_exception_handler(request: Request, exc: Exception):
 app.include_router(health.router, prefix="/api/v1", tags=["health"])
 app.include_router(receipts.router, prefix="/api/v1", tags=["receipts"])
 app.include_router(simulations.router, prefix="/api/v1", tags=["simulations"])
+app.include_router(auth_router.router, prefix="/auth", tags=["auth"])
+app.include_router(intake_router.router, prefix="/api/v1", tags=["intake"])
+app.include_router(collective_router.router, prefix="/api/v1", tags=["collective"])
 
 # Root endpoint
 @app.get("/")
