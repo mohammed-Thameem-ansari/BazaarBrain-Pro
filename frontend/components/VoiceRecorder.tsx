@@ -3,13 +3,14 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { motion, AnimatePresence } from 'framer-motion';
+import React from 'react';
 
 interface VoiceRecorderProps {
   onTranscript: (text: string) => void;
   onError?: (error: string) => void;
 }
 
-export default function VoiceRecorder({ onTranscript, onError }: VoiceRecorderProps) {
+const VoiceRecorder = ({ onTranscript, onError }: VoiceRecorderProps) => {
   const { t } = useLanguage();
   const [isRecording, setIsRecording] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -102,7 +103,7 @@ export default function VoiceRecorder({ onTranscript, onError }: VoiceRecorderPr
     }
   };
 
-  const stopRecording = () => {
+  const stopRecording = useCallback(() => {
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop();
       mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
@@ -113,9 +114,9 @@ export default function VoiceRecorder({ onTranscript, onError }: VoiceRecorderPr
     }
     
     setIsRecording(false);
-  };
+  }, [isRecording]);
 
-  const playRecording = () => {
+  const playRecording = useCallback(() => {
     if (audioUrl) {
       const audio = new Audio(audioUrl);
       setIsPlaying(true);
@@ -130,16 +131,16 @@ export default function VoiceRecorder({ onTranscript, onError }: VoiceRecorderPr
       
       audio.play();
     }
-  };
+  }, [audioUrl, onError]);
 
-  const clearRecording = () => {
+  const clearRecording = useCallback(() => {
     setTranscript('');
     setAudioBlob(null);
     if (audioUrl) {
       URL.revokeObjectURL(audioUrl);
       setAudioUrl('');
     }
-  };
+  }, [audioUrl]);
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6">
@@ -279,4 +280,6 @@ export default function VoiceRecorder({ onTranscript, onError }: VoiceRecorderPr
       </div>
     </div>
   );
-}
+};
+
+export default React.memo(VoiceRecorder);
