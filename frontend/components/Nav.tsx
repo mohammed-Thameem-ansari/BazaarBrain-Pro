@@ -13,6 +13,7 @@ export default function Nav() {
     { name: 'Home', href: '/', current: pathname === '/' },
     { name: 'Dashboard', href: '/dashboard', current: pathname === '/dashboard' },
     { name: 'Upload', href: '/upload', current: pathname === '/upload' },
+    { name: 'Simulation', href: '/simulation', current: pathname === '/simulation' },
     { name: 'History', href: '/history', current: pathname === '/history' },
   ];
 

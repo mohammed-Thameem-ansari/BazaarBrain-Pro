@@ -284,6 +284,19 @@ export default function UploadReceipt({ onUploadSuccess, onUploadError }: Upload
                       <p className="text-sm font-medium text-gray-900">${item.price.toFixed(2)}</p>
                       <p className="text-sm text-gray-500">Total: ${item.total.toFixed(2)}</p>
                     </div>
+                    <div className="ml-4">
+                      <button
+                        onClick={() => {
+                          // Navigate to simulation page with item details
+                          const query = `What if I change the price of ${item.name}?`;
+                          const url = `/simulation?query=${encodeURIComponent(query)}`;
+                          window.location.href = url;
+                        }}
+                        className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded-md text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
+                      >
+                        Run Simulation
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
